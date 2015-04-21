@@ -152,7 +152,7 @@ GenParticleAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iS
           h1_["ptnugen"]->Fill(p4n.Pt()) ; 
           h1_["ptlnugen"]->Fill( (p4l+p4n).Pt() ) ; 
           h1_["Mlnugen"]->Fill( (p4l+p4n).Mag() ) ; 
-          h1_["Mtlnugen"]->Fill( (p4l+p4n).Mt() ) ;
+          h1_["Mtlnugen"]->Fill( sqrt(p4l.Pt()*p4n.Pt()*TMath::Cos( abs(p4l.Theta() - p4n.Theta()) )) ) ;  
         }
       } //// looping over top daughters
     } //// top quark found 
@@ -272,9 +272,9 @@ GenParticleAnalyzer::beginJob()
   h1_["MWfromtgen"] = fs->make<TH1D>("MWfromtgen", ";M(W);;", 100, 0., 100.) ;  
   h1_["Mlnugen"] = fs->make<TH1D>("Mlnugen", ";M(l#nu);;", 100, 0., 100.) ;  
   h1_["ptlnugen"] = fs->make<TH1D>("ptlnugen", ";p_{T}(l#nu);;", 200, 0., 1000.) ;  
-  h1_["Mtlnugen"] = fs->make<TH1D>("Mtlnugen", ";M_{T}(l#nu);;", 200, 0., 1000.) ;  
+  h1_["Mtlnugen"] = fs->make<TH1D>("Mtlnugen", ";M_{T}(l#nu);;", 50, 0., 200.) ;  
   h1_["ptlgen"] = fs->make<TH1D>("ptlgen", ";p_{T}(l) [GeV]", 200, 0., 1000.) ; 
-  h1_["ptnugen"] = fs->make<TH1D>("ptnugen", ";p_{T}(#nu) [GeV]", 200, 0., 1000.) ; 
+  h1_["ptnugen"] = fs->make<TH1D>("ptnugen", ";p_{T}(#nu) [GeV]", 20, 0., 200.) ; 
 
   h1_["MWfromHgen"] = fs->make<TH1D>("MWfromHgen", ";M(W);;", 100, 0., 100.) ;  
   h1_["Mlnust1gen"] = fs->make<TH1D>("Mlnust1gen", ";M(l#nu);;", 100, 0., 100.) ;  
