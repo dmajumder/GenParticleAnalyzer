@@ -109,27 +109,48 @@ GenParticleAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iS
 
   Handle<GenParticleCollection> genParticles;
   iEvent.getByLabel("genParticles", genParticles);
-
+  cout << "Size = " << genParticles->size() << endl; 
   for(size_t i = 0; i < genParticles->size(); ++ i) { 
     const GenParticle & part = (*genParticles)[i];
-    int id = part.pdgId(), st = part.status() ; 
-    if ( abs(id) == 6 && ( abs(st) >=21 && abs(st) <=29) ) {
+    int id = part.pdgId(), st = part.status() ;
+   // cout << "PDG Id " << id << " Status " << st << endl; 
+if ( abs(id) == 1000006 ) {
+     TLorentzVector p4l, p4n ; 
+      unsigned ndau = part.numberOfDaughters() ; 
+      for ( size_t idau = 0; idau < ndau; ++idau) {
+        const Candidate* dau = part.daughter(idau) ; 
+        int dauid = dau->pdgId() ; 
+//        if ( abs(dauid) != 24 ) continue ; 
+                h1_["MWfromtgen"] -> Fill(dau->mass()) ; 
+                TLorentzVector p4w ;
+                p4w.SetPtEtaPhiM(dau->pt(), dau->eta(), dau->phi(), dau->mass()) ;
+                h1_["MtWfromtgen"] -> Fill(dau->mass()) ; 
+                h1_["ptWfromtgen"] -> Fill(p4w.Mt()) ; 
+                unsigned ngdau = dau->numberOfDaughters() ; 
+                //cout << "dauId = " << dauid << " Satus = " << st << " ngdau = " << ngdau << " dau0PdgId = " << dau->daughter(0)->pdgId() << " dau1PdgId = " << dau->daughter(1)->pdgId() <<  endl; 
+ 
+}
+}
+
+/*
+    if ( abs(id) == 1000006 ) {// && ( abs(st) >=21 && abs(st) <=29) ) {
       TLorentzVector p4l, p4n ; 
       unsigned ndau = part.numberOfDaughters() ; 
       for ( size_t idau = 0; idau < ndau; ++idau) {
         const Candidate* dau = part.daughter(idau) ; 
         int dauid = dau->pdgId() ; 
-        if ( abs(dauid) != 24 ) continue ; 
+//        if ( abs(dauid) != 24 ) continue ; 
         h1_["MWfromtgen"] -> Fill(dau->mass()) ; 
         TLorentzVector p4w ;
         p4w.SetPtEtaPhiM(dau->pt(), dau->eta(), dau->phi(), dau->mass()) ;
         h1_["MtWfromtgen"] -> Fill(dau->mass()) ; 
         h1_["ptWfromtgen"] -> Fill(p4w.Mt()) ; 
         unsigned ngdau = dau->numberOfDaughters() ; 
-        if ( ngdau == 1 && abs(dau->daughter(0)->pdgId()) == 24 ) {
+	cout << "dauId = " << dauid << " Satus = " << st << " ngdau = " << ngdau << " dau0PdgId = " << dau->daughter(0)->pdgId() << " dau1PdgId = " << dau->daughter(1)->pdgId() <<  endl; 
+        if ( abs(dau->daughter(0)->pdgId()) == 6 ) {
           const Candidate* gdau = dau->daughter(0) ; 
           unsigned nggdau = gdau->numberOfDaughters() ; 
-          if ( nggdau != 2 ) continue ; 
+//          if ( nggdau != 2 ) continue ; 
           for ( size_t iggdau = 0; iggdau < nggdau; ++iggdau ) {
             const Candidate* ggdau = gdau->daughter(iggdau) ; 
             if ( abs(ggdau->pdgId()) == 11 || abs(ggdau->pdgId()) == 13 || abs(ggdau->pdgId()) == 15 ) 
@@ -156,6 +177,7 @@ GenParticleAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iS
         }
       } //// looping over top daughters
     } //// top quark found 
+*/
   } //// particle loop
 
 
