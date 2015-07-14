@@ -35,6 +35,9 @@ Implementation:
 
 
 #include "DataFormats/HepMCCandidate/interface/GenParticle.h"
+#include "DataFormats/JetReco/interface/GenJetCollection.h"
+#include "DataFormats/JetReco/interface/GenJet.h"
+#include "DataFormats/JetReco/interface/GenJetCollection.h" 
 
 #include <TH1D.h>
 #include <TH2D.h>
@@ -45,26 +48,26 @@ Implementation:
 //
 
 class GenParticleAnalyzer : public edm::EDAnalyzer {
-  public:
-    explicit GenParticleAnalyzer(const edm::ParameterSet&);
-    ~GenParticleAnalyzer();
-
-    static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
-
-
-  private:
-    virtual void beginJob() override;
-    virtual void analyze(const edm::Event&, const edm::EventSetup&) override;
-    virtual void endJob() override;
-
-    //virtual void beginRun(edm::Run const&, edm::EventSetup const&) override;
-    //virtual void endRun(edm::Run const&, edm::EventSetup const&) override;
-    //virtual void beginLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&) override;
-    //virtual void endLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&) override;
-
-    // ----------member data ---------------------------
-    edm::Service<TFileService> fs             ; 
-    std::map<std::string, TH1D*> h1_          ; 
+public:
+  explicit GenParticleAnalyzer(const edm::ParameterSet&);
+  ~GenParticleAnalyzer();
+  
+  static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
+  
+  
+private:
+  virtual void beginJob() override;
+  virtual void analyze(const edm::Event&, const edm::EventSetup&) override;
+  virtual void endJob() override;
+  
+  //virtual void beginRun(edm::Run const&, edm::EventSetup const&) override;
+  //virtual void endRun(edm::Run const&, edm::EventSetup const&) override;
+  //virtual void beginLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&) override;
+  //virtual void endLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&) override;
+  
+  // ----------member data ---------------------------
+  edm::Service<TFileService> fs             ; 
+  std::map<std::string, TH1D*> h1_          ; 
 };
 
 //
@@ -91,255 +94,205 @@ GenParticleAnalyzer::~GenParticleAnalyzer()
 
   // do anything here that needs to be done at desctruction time
   // (e.g. close files, deallocate resources etc.)
-
+  
 }
 
 
 //
-// member functions
+/// member functions
 //
 
 // ------------ method called for each event  ------------
-  void
-GenParticleAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
-{
+void GenParticleAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
   using namespace reco;
   using namespace edm;
   using namespace std;
-
+  
   Handle<GenParticleCollection> genParticles;
   iEvent.getByLabel("genParticles", genParticles);
-  cout << "Size = " << genParticles->size() << endl; 
+  //cout << "Size = " << genParticles->size() << endl; 
   for(size_t i = 0; i < genParticles->size(); ++ i) { 
     const GenParticle & part = (*genParticles)[i];
     int id = part.pdgId(), st = part.status() ;
-   // cout << "PDG Id " << id << " Status " << st << endl; 
-if ( abs(id) == 1000006 ) {
-     TLorentzVector p4l, p4n ; 
-      unsigned ndau = part.numberOfDaughters() ; 
-      for ( size_t idau = 0; idau < ndau; ++idau) {
-        const Candidate* dau = part.daughter(idau) ; 
-        int dauid = dau->pdgId() ; 
-//        if ( abs(dauid) != 24 ) continue ; 
-                h1_["MWfromtgen"] -> Fill(dau->mass()) ; 
-                TLorentzVector p4w ;
-                p4w.SetPtEtaPhiM(dau->pt(), dau->eta(), dau->phi(), dau->mass()) ;
-                h1_["MtWfromtgen"] -> Fill(dau->mass()) ; 
-                h1_["ptWfromtgen"] -> Fill(p4w.Mt()) ; 
-                unsigned ngdau = dau->numberOfDaughters() ; 
-                //cout << "dauId = " << dauid << " Satus = " << st << " ngdau = " << ngdau << " dau0PdgId = " << dau->daughter(0)->pdgId() << " dau1PdgId = " << dau->daughter(1)->pdgId() <<  endl; 
- 
-}
-}
-
-/*
-    if ( abs(id) == 1000006 ) {// && ( abs(st) >=21 && abs(st) <=29) ) {
+    //cout << "PDG Id " << id << " Status " << st << endl; 
+    if ( abs(id) == 1000006  && st == 62 ) {
       TLorentzVector p4l, p4n ; 
+      //      const Candidate* mother = gdau->daughter(iggdau) ; 
+      //p4l.SetPtEtaPhiM(ggdau->pt(), ggdau->eta(), ggdau->phi(), ggdau->mass()) ; 
+      h1_["stop_mass"] -> Fill(part.mass());
+      h1_["stop_pt"] -> Fill(part.pt());
+      h1_["stop_eta"] -> Fill(part.eta());
+      //cout << " Stop mass " << part.mass() << endl;
       unsigned ndau = part.numberOfDaughters() ; 
-      for ( size_t idau = 0; idau < ndau; ++idau) {
-        const Candidate* dau = part.daughter(idau) ; 
-        int dauid = dau->pdgId() ; 
-//        if ( abs(dauid) != 24 ) continue ; 
-        h1_["MWfromtgen"] -> Fill(dau->mass()) ; 
-        TLorentzVector p4w ;
-        p4w.SetPtEtaPhiM(dau->pt(), dau->eta(), dau->phi(), dau->mass()) ;
-        h1_["MtWfromtgen"] -> Fill(dau->mass()) ; 
-        h1_["ptWfromtgen"] -> Fill(p4w.Mt()) ; 
-        unsigned ngdau = dau->numberOfDaughters() ; 
-	cout << "dauId = " << dauid << " Satus = " << st << " ngdau = " << ngdau << " dau0PdgId = " << dau->daughter(0)->pdgId() << " dau1PdgId = " << dau->daughter(1)->pdgId() <<  endl; 
-        if ( abs(dau->daughter(0)->pdgId()) == 6 ) {
-          const Candidate* gdau = dau->daughter(0) ; 
-          unsigned nggdau = gdau->numberOfDaughters() ; 
-//          if ( nggdau != 2 ) continue ; 
-          for ( size_t iggdau = 0; iggdau < nggdau; ++iggdau ) {
-            const Candidate* ggdau = gdau->daughter(iggdau) ; 
-            if ( abs(ggdau->pdgId()) == 11 || abs(ggdau->pdgId()) == 13 || abs(ggdau->pdgId()) == 15 ) 
-              p4l.SetPtEtaPhiM(ggdau->pt(), ggdau->eta(), ggdau->phi(), ggdau->mass()) ; 
-            if ( abs(ggdau->pdgId()) == 12 || abs(ggdau->pdgId()) == 14 || abs(ggdau->pdgId()) == 16 ) 
-              p4n.SetPtEtaPhiM(ggdau->pt(), ggdau->eta(), ggdau->phi(), ggdau->mass()) ; 
-          } //// Loop over W daughters 
-        } //// W -> W
-        else {
-          for ( size_t igdau = 0; igdau < ngdau; ++igdau ) {
-            const Candidate* gdau = dau->daughter(igdau) ; 
-            if ( abs(gdau->pdgId()) == 11 || abs(gdau->pdgId()) == 13 || abs(gdau->pdgId()) == 15 ) 
-              p4l.SetPtEtaPhiM(gdau->pt(), gdau->eta(), gdau->phi(), gdau->mass()) ; 
-            if ( abs(gdau->pdgId()) == 12 || abs(gdau->pdgId()) == 14 || abs(gdau->pdgId()) == 16 ) 
-              p4n.SetPtEtaPhiM(gdau->pt(), gdau->eta(), gdau->phi(), gdau->mass()) ; 
-          }
-        } //// W -> ff
-        if ( p4l.Pt() > 0 && p4n.Pt() > 0  ) {
-          h1_["ptlgen"]->Fill(p4l.Pt()) ; 
-          h1_["ptnugen"]->Fill(p4n.Pt()) ; 
-          h1_["ptlnugen"]->Fill( (p4l+p4n).Pt() ) ; 
-          h1_["Mlnugen"]->Fill( (p4l+p4n).Mag() ) ; 
-          h1_["Mtlnugen"]->Fill( sqrt(p4l.Pt()*p4n.Pt()*TMath::Cos( abs(p4l.Theta() - p4n.Theta()) )) ) ;  
-        }
-      } //// looping over top daughters
-    } //// top quark found 
-*/
-  } //// particle loop
+      cout << " ndau " << ndau << endl;
+      if (ndau != 3) continue;
+      int dau0 = part.daughter(0)->pdgId();
+      int dau1 = part.daughter(1)->pdgId();
+      int dau2 = part.daughter(2)->pdgId();	
+      int daust0 = part.daughter(0)->status();
+      int daust1 = part.daughter(1)->status();
+      int daust2 = part.daughter(2)->status();
+      
+      if ( abs(dau0) == abs(dau1) ) continue; //final state stable particle
+
+      cout << " Id " << id << " Status " << st << " dau0Id " << dau0 << " dau0Status " << daust0 << " dau1Id " << dau1 << " dau1Status " << daust1 << " dau2Id " << dau2 << " dau2Status " << daust2 << endl; 
+      
+      if ( abs(dau0) == 1000022 ) {//Neutralino 1
+	h1_["N1_mass"] -> Fill(part.daughter(0)->mass());
+	h1_["N1_pt"] -> Fill(part.daughter(0)->pt());
+	h1_["N1_eta"] -> Fill(part.daughter(0)->eta());
+      }
+
+      if ( abs(dau1) == 5 ) {//b-quark
+	h1_["b_mass"] -> Fill(part.daughter(1)->mass());
+	h1_["b_pt"] -> Fill(part.daughter(1)->pt());
+	h1_["b_eta"] -> Fill(part.daughter(1)->eta());
+      }
+
+      if ( abs(dau2) == 24 ) {
+	h1_["W_mass"] -> Fill(part.daughter(2)->mass());
+	h1_["W_pt"] -> Fill(part.daughter(2)->pt());
+	h1_["W_eta"] -> Fill(part.daughter(2)->eta());
+      }
+
+    }//stop loop
+  }//GenPertticle loop
+
+  //  Handle<reco::GenMETCollection> genMetCalo;
+  //  iEvent.getByLabel("genMetCalo", genMetCalo);
+  
+  Handle<reco::GenJetCollection> h_ak4GenJets;
+  iEvent.getByLabel("ak4GenJets", h_ak4GenJets);
+  
+  // cout << "Size ak4GenJets = " << (h_ak4GenJets.product())->size() << endl; 
+  int njet = 0 ;
+  std::vector<reco::GenJet>::const_iterator ijet ; 
+  for ( ijet = (h_ak4GenJets.product())->begin(); ijet != (h_ak4GenJets.product())->end(); ++ijet ) { 
+
+    std::vector<const GenParticle*> genjetconsts = ijet->getGenConstituents() ; 
+    //  std::cout << " genjet constituents " << genjetconsts.size() << std::endl ; 
+    
+    for(size_t ij = 0; ij < genjetconsts.size(); ++ ij) {
+      //const GenParticle & part = (*genParticles)[i];
+      //cout << " ij " << ij << endl; 
+    }
 
 
-  /*
-     for(size_t i = 0; i < genParticles->size(); ++ i) {
-     const GenParticle & p = (*genParticles)[i];
-     int id = p.pdgId();
-     int st = p.status();  
-  //double pt = p.pt(), eta = p.eta(), phi = p.phi(), mass = p.mass();
-  //double vx = p.vx(), vy = p.vy(), vz = p.vz();
-  //int charge = p.charge();
+    if (ijet->pt() <= 40 ) continue;
+    if ( njet == 0 ){
 
-  if ( abs(id) == 25 && ( st >= 21 && st <= 29) ) {
-  unsigned n = p.numberOfDaughters();
-  for(size_t j = 0; j < n; ++ j) {
-  const Candidate * d = p.daughter( j );
-  int dauId = d->pdgId();
-  if ( abs(dauId) == 24 ) {
-  h1_["MWfromHgen"]->Fill(d->mass()) ;
+      // cout << " Jet Pt0 " << ijet->pt() << " Jet Eta0 " << ijet->eta() << " Jet Phi0 " << ijet->phi() << endl ;
+      h1_["jet0_pt"] -> Fill( ijet->pt() ) ;
+      h1_["jet0_eta"] -> Fill( ijet->eta() ) ;
+      h1_["jet0_phi"] -> Fill( ijet->phi() ) ;
+    }
+    
+    if ( njet == 1 ){ 
+      // cout << " Jet Pt1 " << ijet->pt() << " Jet Eta1 " << ijet->eta() << " Jet Phi1 " << ijet->phi() << endl ;
+      h1_["jet1_pt"] -> Fill( ijet->pt() ) ;
+      h1_["jet1_eta"] -> Fill( ijet->eta() ) ;
+      h1_["jet1_phi"] -> Fill( ijet->phi() ) ;
+    }
+    
+    h1_["jet_pt"] -> Fill( ijet->pt() ) ;
+    h1_["jet_eta"] -> Fill( ijet->eta() ) ;
+    h1_["jet_phi"] -> Fill( ijet->phi() ) ;
+    //cout << " Jet Pt " << ijet->pt() << " Jet Eta " << ijet->eta() << " Jet Phi " << ijet->phi() << endl ;
+    njet++;
   }
-  }
-  }
-
-  if ( abs(id) == 6 && ( st >= 21 && st <= 29) ) {
-  unsigned n = p.numberOfDaughters();
-  for(size_t j = 0; j < n; ++ j) {
-  const Candidate * d = p.daughter( j );
-  int dauId = d->pdgId();
-  if ( abs(dauId) == 24 ) {
-  h1_["MWfromtgen"]->Fill(d->mass()) ;
-  unsigned ngd = d->numberOfDaughters() ;
-
-  TLorentzVector p4l, p4n ; 
-
-  if ( ngd == 1 && abs(d->daughter( 0 )->pdgId() == 24) )  {
-  const Candidate *dau = d->daughter(0) ; 
-  unsigned nggd = dau->numberOfDaughters() ;
-  if ( nggd == 1 && abs(dau->daughter( 0 )->pdgId() == 24) )  {
-  cout << "W undecayed\n" ; 
-  }
-  else {
-  for ( size_t iggd = 0; iggd < nggd; ++iggd ) {
-  const Candidate* ggdau = dau->daughter( iggd ) ; 
-  int ggdauid = ggdau->pdgId() ; 
-  if ( abs(ggdauid) == 11 || abs(ggdauid) == 13 || abs(ggdauid) == 15 ) {
-  p4l.SetPtEtaPhiM( ggdau->pt(), ggdau->eta(), ggdau->phi(), ggdau->mass() ) ; 
-  }
-  if ( abs(ggdauid) == 12 || abs(ggdauid) == 14 || abs(ggdauid) == 16 ) {
-  p4l.SetPtEtaPhiM( ggdau->pt(), ggdau->eta(), ggdau->phi(), ggdau->mass() ) ; 
-  }
-  }
-  }
-  }
-  else {
-  for ( size_t i = 0; i < ngd; ++i ) {
-  const Candidate * gd = d->daughter( i );
-  int gdid = gd->pdgId() ; 
-  cout << " W dau id " << gdid << " status " << gd->status() << endl ; 
-  if ( abs(gdid) == 11 || abs(gdid) == 13 || abs(gdid) == 15 ) {
-  p4l.SetPtEtaPhiM( gd->pt(), gd->eta(), gd->phi(), gd->mass() ) ; 
-  }
-  if ( abs(gdid) == 12 || abs(gdid) == 14 || abs(gdid) == 16 ) {
-  p4l.SetPtEtaPhiM( gd->pt(), gd->eta(), gd->phi(), gd->mass() ) ; 
-  }
-  }
-  }
-  cout << " ptl " << p4l.Pt() << " ptn " << p4n.Pt() << " Mlnugen " << (p4l+p4n).Mag() << " Mtlnugen " << (p4l+p4n).Mt() << endl ; 
-  if (p4l.Pt() > 0 && p4n.Pt() > 0) {
-  h1_["Mtlnugen"] -> Fill( (p4l+p4n).Mt() ) ; 
-  h1_["Mlnugen"]->Fill( (p4l+p4n).Mag() ) ;
-  }
-  }
-  }
-  }
-
-  //if ( abs(id) == 24 && ( st >= 21 && st <= 29) ) {
-  //  p4w.SetPtEtaPhiM(pt, eta, phi, mass) ;
-  //  h1_["MWgen"]->Fill(p4w.Mag()) ; 
-  //  bool lepw(false) ; 
-  //  unsigned n = p.numberOfDaughters();
-  //  for(size_t j = 0; j < n; ++ j) {
-  //    const Candidate * d = p.daughter( j );
-  //    int dauId = d->pdgId();
-  //    //int daust = d->status() ; 
-
-  //    //if ( abs(dauId) == 24 && daust == 52)
-
-  //    double daupt = d->pt(), daueta = d->eta(), dauphi = d->phi(), daumass = d->mass() ; 
-  //    if ( abs(dauId) == 11 || abs(dauId) == 13 || abs(dauId) == 15 ) { lepw = true ; p4l.SetPtEtaPhiM(daupt, daueta, dauphi, daumass) ; } 
-  //    if ( abs(dauId) == 12 || abs(dauId) == 14 || abs(dauId) == 16 ) { lepw = true ; p4nu.SetPtEtaPhiM(daupt, daueta, dauphi, daumass) ; } 
-  //  }
-  //  if ( lepw ) {
-  //    p4lnu = p4l+p4nu ; 
-  //    h1_["Mlnugen"]->Fill(p4lnu.Mag()) ;
-  //  }
-  //} // W particle
-
-  //const Candidate * mom = p.mother();
-  //const Candidate * grandmom = mom->mother();
-}
-*/
-
-
-}
+  // cout << " Njets = " << njet << endl ; 
+  
+  h1_["njets"] -> Fill( njet ) ;
+  
+  
+  
+}//end of GenpartAn
 
 
 // ------------ method called once each job just before starting event loop  ------------
-  void 
+void 
 GenParticleAnalyzer::beginJob()
 {
   TFileDirectory results = TFileDirectory( fs->mkdir("results") );
-  h1_["ptWfromtgen"] = fs->make<TH1D>("ptWfromtgen", ";p_{T}(W);;", 200, 0., 1000.) ;  
-  h1_["MtWfromtgen"] = fs->make<TH1D>("MtWfromtgen", ";M_{T}(W);;", 200, 0., 1000.) ;  
-  h1_["MWfromtgen"] = fs->make<TH1D>("MWfromtgen", ";M(W);;", 100, 0., 100.) ;  
-  h1_["Mlnugen"] = fs->make<TH1D>("Mlnugen", ";M(l#nu);;", 100, 0., 100.) ;  
-  h1_["ptlnugen"] = fs->make<TH1D>("ptlnugen", ";p_{T}(l#nu);;", 200, 0., 1000.) ;  
-  h1_["Mtlnugen"] = fs->make<TH1D>("Mtlnugen", ";M_{T}(l#nu);;", 50, 0., 200.) ;  
-  h1_["ptlgen"] = fs->make<TH1D>("ptlgen", ";p_{T}(l) [GeV]", 200, 0., 1000.) ; 
-  h1_["ptnugen"] = fs->make<TH1D>("ptnugen", ";p_{T}(#nu) [GeV]", 20, 0., 200.) ; 
+  h1_["stop_mass"] = fs->make<TH1D>("stop_mass", "Stop Mass", 1000, 0., 1000.) ;
+  h1_["stop_pt"] = fs->make<TH1D>("stop_pt", "Stop Pt", 100, 0., 1600.) ;
+  h1_["stop_eta"] = fs->make<TH1D>("stop_eta", "Stop Eta", 50, -5.0, 5.0) ;
+  h1_["N1_mass"] = fs->make<TH1D>("N1_mass", "N1 Mass", 100, 0., 1600.) ;
+  h1_["N1_pt"] = fs->make<TH1D>("N1_pt", "N1 Pt", 100, 0., 1600.) ;
+  h1_["N1_eta"] = fs->make<TH1D>("N1_eta", "N1 Eta", 50, -5.0, 5.0) ;
+  //  h1_["t_mass"] = fs->make<TH1D>("t_mass", "t Mass", 500, 0., 500.) ;
+  //h1_["t_pt"] = fs->make<TH1D>("t_pt", "t Pt", 500, 0., 500.) ;
+  //h1_["t_eta"] = fs->make<TH1D>("t_eta", "t Eta", 50, -5.0, 5.0) ;
+  h1_["W_mass"] = fs->make<TH1D>("W_mass", "W Mass", 500, 0., 500.) ;
+  h1_["W_pt"] = fs->make<TH1D>("W_pt", "W Pt", 50, 0., 800.) ;
+  h1_["W_eta"] = fs->make<TH1D>("W_eta", "W Eta", 50, -5.0, 5.0) ;
+  h1_["b_mass"] = fs->make<TH1D>("b_mass", "b Mass", 10, 0., 10.) ;
+  h1_["b_pt"] = fs->make<TH1D>("b_pt", "b Pt", 100, 0., 400.) ;
+  h1_["b_eta"] = fs->make<TH1D>("b_eta", "b Eta", 50, -5.0, 5.0) ;
 
-  h1_["MWfromHgen"] = fs->make<TH1D>("MWfromHgen", ";M(W);;", 100, 0., 100.) ;  
-  h1_["Mlnust1gen"] = fs->make<TH1D>("Mlnust1gen", ";M(l#nu);;", 100, 0., 100.) ;  
-
+  h1_["jet_pt"] = fs->make<TH1D>("jet_pt", "All jets Pt > 40", 100, 0., 800.) ;
+  h1_["jet_eta"] = fs->make<TH1D>("jet_eta", "Jet Eta", 50, -5.0, 5.0) ;
+  h1_["jet_phi"] = fs->make<TH1D>("jet_phi", "Jet Phi", 50, -3.5, 3.5) ;
+  h1_["njets"] = fs->make<TH1D>("njets", "No. of Jets", 21, -1.0, 20.0) ;
+  
+  h1_["jet0_pt"] = fs->make<TH1D>("jet0_pt", "Leading Jet Pt", 100, 0., 800.) ;
+  h1_["jet0_eta"] = fs->make<TH1D>("jet0_eta", "Leading Jet Eta", 50, -5.0, 5.0) ;
+  h1_["jet0_phi"] = fs->make<TH1D>("jet0_phi", "Leading Jet Phi", 50, -3.5, 3.5) ;
+  
+  h1_["jet1_pt"] = fs->make<TH1D>("jet1_pt", "Sub-leading Jet Pt", 100, 0., 800.) ;
+  h1_["jet1_eta"] = fs->make<TH1D>("jet1_eta", "Sub-leading Jet Eta", 50, -5.0, 5.0) ;
+  h1_["jet1_phi"] = fs->make<TH1D>("jet1_phi", "Sub-leading Jet Phi", 50, -3.5, 3.5) ;
+  
+  //h1_["ptWfromtgen"] = fs->make<TH1D>("ptWfromtgen", ";p_{T}(W);;", 200, 0., 1000.) ;  
+  //h1_["MtWfromtgen"] = fs->make<TH1D>("MtWfromtgen", ";M_{T}(W);;", 200, 0., 1000.) ;  
+  //h1_["MWfromtgen"] = fs->make<TH1D>("MWfromtgen", ";M(W);;", 100, 0., 100.) ;  
+  //h1_["Mlnugen"] = fs->make<TH1D>("Mlnugen", ";M(l#nu);;", 100, 0., 100.) ;  
+  //h1_["ptlnugen"] = fs->make<TH1D>("ptlnugen", ";p_{T}(l#nu);;", 200, 0., 1000.) ;  
+  //h1_["Mtlnugen"] = fs->make<TH1D>("Mtlnugen", ";M_{T}(l#nu);;", 50, 0., 200.) ;  
+  //h1_["ptlgen"] = fs->make<TH1D>("ptlgen", ";p_{T}(l) [GeV]", 200, 0., 1000.) ; 
+  //h1_["ptnugen"] = fs->make<TH1D>("ptnugen", ";p_{T}(#nu) [GeV]", 20, 0., 200.) ; 
+  //h1_["MWfromHgen"] = fs->make<TH1D>("MWfromHgen", ";M(W);;", 100, 0., 100.) ;  
+  //h1_["Mlnust1gen"] = fs->make<TH1D>("Mlnust1gen", ";M(l#nu);;", 100, 0., 100.) ;  
+  
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
-  void 
+void 
 GenParticleAnalyzer::endJob() 
 {
 }
 
 // ------------ method called when starting to processes a run  ------------
 /*
-   void 
-   GenParticleAnalyzer::beginRun(edm::Run const&, edm::EventSetup const&)
-   {
-   }
-   */
+  void 
+  GenParticleAnalyzer::beginRun(edm::Run const&, edm::EventSetup const&)
+  {
+  }
+*/
 
 // ------------ method called when ending the processing of a run  ------------
 /*
-   void 
-   GenParticleAnalyzer::endRun(edm::Run const&, edm::EventSetup const&)
-   {
-   }
-   */
+  void 
+  GenParticleAnalyzer::endRun(edm::Run const&, edm::EventSetup const&)
+  {
+  }
+*/
 
 // ------------ method called when starting to processes a luminosity block  ------------
 /*
-   void 
-   GenParticleAnalyzer::beginLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&)
-   {
-   }
-   */
+  void 
+  GenParticleAnalyzer::beginLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&)
+  {
+  }
+*/
 
 // ------------ method called when ending the processing of a luminosity block  ------------
 /*
-   void 
-   GenParticleAnalyzer::endLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&)
-   {
-   }
-   */
+  void 
+  GenParticleAnalyzer::endLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&)
+  {
+  }
+*/
 
 // ------------ method fills 'descriptions' with the allowed parameters for the module  ------------
 void
