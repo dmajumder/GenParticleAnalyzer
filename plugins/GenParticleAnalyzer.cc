@@ -35,6 +35,7 @@ Implementation:
 
 
 #include "DataFormats/HepMCCandidate/interface/GenParticle.h"
+#include "DataFormats/JetReco/interface/GenJetCollection.h"
 
 #include <TH1D.h>
 #include <TH2D.h>
@@ -150,6 +151,8 @@ GenParticleAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iS
         if ( p4l.Pt() > 0 && p4n.Pt() > 0  ) {
           h1_["ptlgen"]->Fill(p4l.Pt()) ; 
           h1_["ptnugen"]->Fill(p4n.Pt()) ; 
+          h1_["etalgen"]->Fill(p4l.Eta()) ; 
+          h1_["etanugen"]->Fill(p4n.Eta()) ; 
           h1_["ptlnugen"]->Fill( (p4l+p4n).Pt() ) ; 
           h1_["Mlnugen"]->Fill( (p4l+p4n).Mag() ) ; 
           h1_["Mtlnugen"]->Fill( sqrt(p4l.Pt()*p4n.Pt()*TMath::Cos( abs(p4l.Theta() - p4n.Theta()) )) ) ;  
@@ -159,104 +162,22 @@ GenParticleAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iS
   } //// particle loop
 
 
-  /*
-     for(size_t i = 0; i < genParticles->size(); ++ i) {
-     const GenParticle & p = (*genParticles)[i];
-     int id = p.pdgId();
-     int st = p.status();  
-  //double pt = p.pt(), eta = p.eta(), phi = p.phi(), mass = p.mass();
-  //double vx = p.vx(), vy = p.vy(), vz = p.vz();
-  //int charge = p.charge();
+    Handle<reco::GenJetCollection> h_ak4GenJets;
+    iEvent.getByLabel("ak4GenJets", h_ak4GenJets);
+    std::vector<reco::GenJet>::const_iterator ijet ;
+    for ( ijet = (h_ak4GenJets.product())->begin(); ijet != (h_ak4GenJets.product())->end(); ++ijet ) { 
 
-  if ( abs(id) == 25 && ( st >= 21 && st <= 29) ) {
-  unsigned n = p.numberOfDaughters();
-  for(size_t j = 0; j < n; ++ j) {
-  const Candidate * d = p.daughter( j );
-  int dauId = d->pdgId();
-  if ( abs(dauId) == 24 ) {
-  h1_["MWfromHgen"]->Fill(d->mass()) ;
-  }
-  }
-  }
-
-  if ( abs(id) == 6 && ( st >= 21 && st <= 29) ) {
-  unsigned n = p.numberOfDaughters();
-  for(size_t j = 0; j < n; ++ j) {
-  const Candidate * d = p.daughter( j );
-  int dauId = d->pdgId();
-  if ( abs(dauId) == 24 ) {
-  h1_["MWfromtgen"]->Fill(d->mass()) ;
-  unsigned ngd = d->numberOfDaughters() ;
-
-  TLorentzVector p4l, p4n ; 
-
-  if ( ngd == 1 && abs(d->daughter( 0 )->pdgId() == 24) )  {
-  const Candidate *dau = d->daughter(0) ; 
-  unsigned nggd = dau->numberOfDaughters() ;
-  if ( nggd == 1 && abs(dau->daughter( 0 )->pdgId() == 24) )  {
-  cout << "W undecayed\n" ; 
-  }
-  else {
-  for ( size_t iggd = 0; iggd < nggd; ++iggd ) {
-  const Candidate* ggdau = dau->daughter( iggd ) ; 
-  int ggdauid = ggdau->pdgId() ; 
-  if ( abs(ggdauid) == 11 || abs(ggdauid) == 13 || abs(ggdauid) == 15 ) {
-  p4l.SetPtEtaPhiM( ggdau->pt(), ggdau->eta(), ggdau->phi(), ggdau->mass() ) ; 
-  }
-  if ( abs(ggdauid) == 12 || abs(ggdauid) == 14 || abs(ggdauid) == 16 ) {
-  p4l.SetPtEtaPhiM( ggdau->pt(), ggdau->eta(), ggdau->phi(), ggdau->mass() ) ; 
-  }
-  }
-  }
-  }
-  else {
-  for ( size_t i = 0; i < ngd; ++i ) {
-  const Candidate * gd = d->daughter( i );
-  int gdid = gd->pdgId() ; 
-  cout << " W dau id " << gdid << " status " << gd->status() << endl ; 
-  if ( abs(gdid) == 11 || abs(gdid) == 13 || abs(gdid) == 15 ) {
-  p4l.SetPtEtaPhiM( gd->pt(), gd->eta(), gd->phi(), gd->mass() ) ; 
-  }
-  if ( abs(gdid) == 12 || abs(gdid) == 14 || abs(gdid) == 16 ) {
-  p4l.SetPtEtaPhiM( gd->pt(), gd->eta(), gd->phi(), gd->mass() ) ; 
-  }
-  }
-  }
-  cout << " ptl " << p4l.Pt() << " ptn " << p4n.Pt() << " Mlnugen " << (p4l+p4n).Mag() << " Mtlnugen " << (p4l+p4n).Mt() << endl ; 
-  if (p4l.Pt() > 0 && p4n.Pt() > 0) {
-  h1_["Mtlnugen"] -> Fill( (p4l+p4n).Mt() ) ; 
-  h1_["Mlnugen"]->Fill( (p4l+p4n).Mag() ) ;
-  }
-  }
-  }
-  }
-
-  //if ( abs(id) == 24 && ( st >= 21 && st <= 29) ) {
-  //  p4w.SetPtEtaPhiM(pt, eta, phi, mass) ;
-  //  h1_["MWgen"]->Fill(p4w.Mag()) ; 
-  //  bool lepw(false) ; 
-  //  unsigned n = p.numberOfDaughters();
-  //  for(size_t j = 0; j < n; ++ j) {
-  //    const Candidate * d = p.daughter( j );
-  //    int dauId = d->pdgId();
-  //    //int daust = d->status() ; 
-
-  //    //if ( abs(dauId) == 24 && daust == 52)
-
-  //    double daupt = d->pt(), daueta = d->eta(), dauphi = d->phi(), daumass = d->mass() ; 
-  //    if ( abs(dauId) == 11 || abs(dauId) == 13 || abs(dauId) == 15 ) { lepw = true ; p4l.SetPtEtaPhiM(daupt, daueta, dauphi, daumass) ; } 
-  //    if ( abs(dauId) == 12 || abs(dauId) == 14 || abs(dauId) == 16 ) { lepw = true ; p4nu.SetPtEtaPhiM(daupt, daueta, dauphi, daumass) ; } 
-  //  }
-  //  if ( lepw ) {
-  //    p4lnu = p4l+p4nu ; 
-  //    h1_["Mlnugen"]->Fill(p4lnu.Mag()) ;
-  //  }
-  //} // W particle
-
-  //const Candidate * mom = p.mother();
-  //const Candidate * grandmom = mom->mother();
-}
-*/
+      bool isBjet(false); 
+      int nBHadrons(0) ;
+      int nDHadrons(0) ; 
+      std::vector<const GenParticle*> genjetconsts = ijet->getGenConstituents() ; 
+      for (auto part : genjetconsts) {
+        int partid = part->pdgId() ; 
+        if ( (partid/100)%10 == 5 || (partid/1000)%10 == 5 ) ++nBHadrons ; 
+        if (  (partid/100)%10 == 4 || (partid/1000)%10 == 4 ) ++nDHadrons ; 
+      }
+      if (nBHadrons > 0) isBjet = true ; 
+    }
 
 
 }
@@ -274,10 +195,10 @@ GenParticleAnalyzer::beginJob()
   h1_["ptlnugen"] = fs->make<TH1D>("ptlnugen", ";p_{T}(l#nu);;", 200, 0., 1000.) ;  
   h1_["Mtlnugen"] = fs->make<TH1D>("Mtlnugen", ";M_{T}(l#nu);;", 50, 0., 200.) ;  
   h1_["ptlgen"] = fs->make<TH1D>("ptlgen", ";p_{T}(l) [GeV]", 200, 0., 1000.) ; 
-  h1_["ptnugen"] = fs->make<TH1D>("ptnugen", ";p_{T}(#nu) [GeV]", 20, 0., 200.) ; 
+  h1_["ptnugen"] = fs->make<TH1D>("ptnugen", ";p_{T}(#nu) [GeV]", 200, 0., 1000.) ; 
+  h1_["etalgen"]  = fs->make<TH1D>("etalgen",  ";#eta(l) [GeV]"  , 40, -5., 5.) ; 
+  h1_["etanugen"] = fs->make<TH1D>("etanugen", ";#eta(#nu) [GeV]", 40, -5., 5.) ; 
 
-  h1_["MWfromHgen"] = fs->make<TH1D>("MWfromHgen", ";M(W);;", 100, 0., 100.) ;  
-  h1_["Mlnust1gen"] = fs->make<TH1D>("Mlnust1gen", ";M(l#nu);;", 100, 0., 100.) ;  
 
 }
 
