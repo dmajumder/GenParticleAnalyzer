@@ -111,26 +111,25 @@ void GenParticleAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetu
   Handle<GenParticleCollection> genParticles;
   iEvent.getByLabel("genParticles", genParticles);
   //cout << "Size = " << genParticles->size() << endl; 
+  //int n_stop = 0;
+  int b_jet_mult = 0 ;
+  
   for(size_t i = 0; i < genParticles->size(); ++ i) { 
     const GenParticle & part = (*genParticles)[i];
     int id = part.pdgId(), st = part.status() ;
     //cout << "PDG Id " << id << " Status " << st << endl;
-    int n_stop = 0;
-    if ( abs(id) == 1000006  ) {
-        n_stop++;
-    }
-    if ( n_stop > 0 ) cout << " n_stop " << n_stop << endl;
     if ( abs(id) == 1000006  && st == 62 ) {
       TLorentzVector p4l, p4n ; 
-      //      const Candidate* mother = gdau->daughter(iggdau) ; 
-      //p4l.SetPtEtaPhiM(ggdau->pt(), ggdau->eta(), ggdau->phi(), ggdau->mass()) ; 
+    
       h1_["stop_mass"] -> Fill(part.mass());
       h1_["stop_pt"] -> Fill(part.pt());
       h1_["stop_eta"] -> Fill(part.eta());
-     cout << " Stop mass " << part.mass() << " GenPart size " << genParticles->size() << endl;
+      //cout << " Stop mass " << part.mass() << " GenPart size " << genParticles->size() << endl;
+
+      //if ( n_stop > 0 ) cout << " n_stop " << n_stop << endl;
       unsigned ndau = part.numberOfDaughters() ; 
       cout << " ndau " << ndau << endl;
-      if (ndau != 3) continue;
+      //if (ndau != 3) continue;
       //if (ndau != 2) continue;
       int dau0 = part.daughter(0)->pdgId();
       int dau1 = part.daughter(1)->pdgId();
@@ -139,52 +138,54 @@ void GenParticleAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetu
       int daust1 = part.daughter(1)->status();
       int daust2 = part.daughter(2)->status();
       
-      if ( abs(dau0) == abs(dau1) ) continue; //final state stable particle
+      //      if ( abs(dau0) == abs(dau1) ) continue; //final state stable particle
+      if ( abs(dau0) != abs(dau1) && ndau == 3 ){
 
-      cout << " Id " << id << " Status " << st << " dau0Id " << dau0 << " dau0Status " << daust0 << " dau1Id " << dau1 << " dau1Status " << daust1 << " dau2Id " << dau2 << " dau2Status " << daust2 << endl; 
-      //cout << " Id " << id << " Status " << st << " dau0Id " << dau0 << " dau0Status " << daust0 << " dau1Id " << dau1 << " dau1Status " << daust1 << endl; 
+	cout << " Id " << id << " Status " << st << " dau0Id " << dau0 << " dau0Status " << daust0 << " dau1Id " << dau1 << " dau1Status " << daust1 << " dau2Id " << dau2 << " dau2Status " << daust2 << endl; 
+	//cout << " Id " << id << " Status " << st << " dau0Id " << dau0 << " dau0Status " << daust0 << " dau1Id " << dau1 << " dau1Status " << daust1 << endl; 
       
-      if ( abs(dau0) == 1000022 ) {//Neutralino 1
-	h1_["N1_mass"] -> Fill(part.daughter(0)->mass());
-	h1_["N1_pt"] -> Fill(part.daughter(0)->pt());
-	h1_["N1_eta"] -> Fill(part.daughter(0)->eta());
-      }
+	if ( abs(dau0) == 1000022 ) {//Neutralino 1
+	  h1_["N1_mass"] -> Fill(part.daughter(0)->mass());
+	  h1_["N1_pt"] -> Fill(part.daughter(0)->pt());
+	  h1_["N1_eta"] -> Fill(part.daughter(0)->eta());
+	}
+	
+	if ( abs(dau1) == 6 ) {//t-quark
+	  h1_["t_mass"] -> Fill(part.daughter(1)->mass());
+	  h1_["t_pt"] -> Fill(part.daughter(1)->pt());
+	  h1_["t_eta"] -> Fill(part.daughter(1)->eta());
+	}
+	
+	if ( abs(dau1) == 5 ) {//b-quark
+	  h1_["b_mass"] -> Fill(part.daughter(1)->mass());
+	  h1_["b_pt"] -> Fill(part.daughter(1)->pt());
+	  h1_["b_eta"] -> Fill(part.daughter(1)->eta());
+	  
+	  if ( part.daughter(1)->pt() > 20 && abs(part.daughter(1)->eta()) < 2.4 ) {
+	    b_jet_mult++;
+	  }
+	  h1_["n_b_quark"] -> Fill(b_jet_mult) ;
+	}
 
-      if ( abs(dau1) == 6 ) {//t-quark
-        h1_["t_mass"] -> Fill(part.daughter(1)->mass());
-        h1_["t_pt"] -> Fill(part.daughter(1)->pt());
-        h1_["t_eta"] -> Fill(part.daughter(1)->eta());
-      }
-
-      if ( abs(dau1) == 5 ) {//b-quark
-	h1_["b_mass"] -> Fill(part.daughter(1)->mass());
-	h1_["b_pt"] -> Fill(part.daughter(1)->pt());
-	h1_["b_eta"] -> Fill(part.daughter(1)->eta());
-        int b_jet_mult = 0 ;
-        if ( part.daughter(1)->pt() > 20 && abs(part.daughter(1)->eta()) < 2.4 ) {
-               b_jet_mult++;
-        }
-        h1_["n_b_jet"] -> Fill(b_jet_mult) ;
-      }
-
-      if ( abs(dau2) == 24 ) {//W
-	h1_["W_mass"] -> Fill(part.daughter(2)->mass());
-	h1_["W_pt"] -> Fill(part.daughter(2)->pt());
-	h1_["W_eta"] -> Fill(part.daughter(2)->eta());
-      }
-
-      if ( abs(dau2) == 24 && abs(dau1) == 5 ) {
-        
-        cout << " DeltaR " << reco::deltaR(*part.daughter(1), *part.daughter(2)) << endl ;
-        h1_["delta_R_W_b"] -> Fill(reco::deltaR(*part.daughter(1), *part.daughter(2))); 
-      } else { cout << " Other t-decays than Wb " << endl;}
-
+	if ( abs(dau2) == 24 ) {//W
+	  h1_["W_mass"] -> Fill(part.daughter(2)->mass());
+	  h1_["W_pt"] -> Fill(part.daughter(2)->pt());
+	  h1_["W_eta"] -> Fill(part.daughter(2)->eta());
+	}
+	
+	if ( abs(dau2) == 24 && abs(dau1) == 5 ) {
+	  
+	  cout << " DeltaR " << reco::deltaR(*part.daughter(1), *part.daughter(2)) << endl ;
+	  h1_["delta_R_W_b"] -> Fill(reco::deltaR(*part.daughter(1), *part.daughter(2))); 
+	} else { cout << " Other t-decays than Wb " << endl;}
+	
+      }//end of if abs(dau0) != abs(dau1) && ndau == 3 
 
     }//stop loop
-
-
+    
+    
   }//GenPertticle loop
-
+  
   //  Handle<reco::GenMETCollection> genMetCalo;
   //  iEvent.getByLabel("genMetCalo", genMetCalo);
   
@@ -192,22 +193,32 @@ void GenParticleAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetu
   iEvent.getByLabel("ak4GenJets", h_ak4GenJets);
   
   // cout << "Size ak4GenJets = " << (h_ak4GenJets.product())->size() << endl; 
-  int njet = 0 ;
+  int njet(0) ;
+  int nBjet(0) ;
   std::vector<reco::GenJet>::const_iterator ijet ; 
   for ( ijet = (h_ak4GenJets.product())->begin(); ijet != (h_ak4GenJets.product())->end(); ++ijet ) { 
 
-    std::vector<const GenParticle*> genjetconsts = ijet->getGenConstituents() ; 
-    //  std::cout << " genjet constituents " << genjetconsts.size() << std::endl ; 
-    
-    for(size_t ij = 0; ij < genjetconsts.size(); ++ ij) {
-      //const GenParticle & part = (*genParticles)[i];
-      //cout << " ij " << ij << endl; 
-    }
-
-
     if (ijet->pt() <= 40 ) continue;
-    if ( njet == 0 ){
+    bool isBjet(false);
+    int nBHadrons(0) ;
+    int nDHadrons(0) ;  
+    std::vector<const GenParticle*> genjetconsts = ijet->getGenConstituents() ; 
+    //std::cout << " genjet constituents " << genjetconsts.size() << std::endl ; 
+    for (auto part : genjetconsts) {
+      int partid = part->pdgId() ; 
+      //cout << " partid " << partid << " status " << part->status() << endl ;
+      if ( (partid/100)%10 == 5 || (partid/1000)%10 == 5 ) ++nBHadrons ; 
+      if (  (partid/100)%10 == 4 || (partid/1000)%10 == 4 ) ++nDHadrons ; 
+    }
+   
+    //cout << " nBHadrons " << nBHadrons << " nDHadrons " << nDHadrons << endl;
 
+    //    for (size_t ij = 0; ij < genjetconsts.size(); ++ ij) {
+    //const GenParticle & part = (*genParticles)[i];
+    //cout << " ij " << ij << endl; 
+    //    }
+    
+    if ( njet == 0 ){
       // cout << " Jet Pt0 " << ijet->pt() << " Jet Eta0 " << ijet->eta() << " Jet Phi0 " << ijet->phi() << endl ;
       h1_["jet0_pt"] -> Fill( ijet->pt() ) ;
       h1_["jet0_eta"] -> Fill( ijet->eta() ) ;
@@ -226,11 +237,20 @@ void GenParticleAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetu
     h1_["jet_phi"] -> Fill( ijet->phi() ) ;
     //cout << " Jet Pt " << ijet->pt() << " Jet Eta " << ijet->eta() << " Jet Phi " << ijet->phi() << endl ;
     njet++;
+    if (nBHadrons > 0) isBjet = true ; 
+    if (isBjet){
+      h1_["b_jet_pt"] -> Fill( ijet->pt() ) ;
+      h1_["b_jet_eta"] -> Fill( ijet->eta() ) ;
+      h1_["b_jet_phi"] -> Fill( ijet->phi() ) ;
+      nBjet++ ;
+      h1_["n_b_jet"] -> Fill( nBjet ) ;
+    }  
+
   }
   // cout << " Njets = " << njet << endl ; 
   
   h1_["njets"] -> Fill( njet ) ;
-  
+  //  if ( njet == 0 || njet == 1 )
   
   
 }//end of GenpartAn
@@ -256,13 +276,18 @@ GenParticleAnalyzer::beginJob()
   h1_["b_mass"] = fs->make<TH1D>("b_mass", "b Mass", 10, 0., 10.) ;
   h1_["b_pt"] = fs->make<TH1D>("b_pt", "b Pt", 100, 0., 400.) ;
   h1_["b_eta"] = fs->make<TH1D>("b_eta", "b Eta", 50, -5.0, 5.0) ;
-  h1_["n_b_jet"] = fs->make<TH1D>("n_b_jets", "No. of central b-jets (gen)", 21, -0.5, 20.5) ;
+  h1_["n_b_quark"] = fs->make<TH1D>("n_b_quarks", "No. of central b-quark", 21, -0.5, 20.5) ;
   h1_["delta_R_W_b"] = fs->make<TH1D>("delta_R_W_b", "dR of W,b", 100, 0.0, 10.0) ; 
 
-  h1_["jet_pt"] = fs->make<TH1D>("jet_pt", "All jets Pt > 40", 100, 0., 800.) ;
+  h1_["jet_pt"] = fs->make<TH1D>("jet_pt", "All GenJets Pt > 40", 100, 0., 800.) ;
   h1_["jet_eta"] = fs->make<TH1D>("jet_eta", "Jet Eta", 50, -5.0, 5.0) ;
   h1_["jet_phi"] = fs->make<TH1D>("jet_phi", "Jet Phi", 50, -3.5, 3.5) ;
   h1_["njets"] = fs->make<TH1D>("njets", "No. of Jets", 21, -0.5, 20.5) ;
+
+  h1_["b_jet_pt"] = fs->make<TH1D>("b_jet_pt", "All GenJets (matched B-hadron) ", 100, 0., 800.) ;
+  h1_["b_jet_eta"] = fs->make<TH1D>("b_jet_eta", "Jet Eta", 50, -5.0, 5.0) ;
+  h1_["b_jet_phi"] = fs->make<TH1D>("b_jet_phi", "Jet Phi", 50, -3.5, 3.5) ;
+  h1_["n_b_jet"] = fs->make<TH1D>("nbjets", "No. of Jets (matched B-hadron) ", 21, -0.5, 20.5) ;
   
   h1_["jet0_pt"] = fs->make<TH1D>("jet0_pt", "Leading Jet Pt", 100, 0., 800.) ;
   h1_["jet0_eta"] = fs->make<TH1D>("jet0_eta", "Leading Jet Eta", 50, -5.0, 5.0) ;
